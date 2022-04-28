@@ -32,6 +32,7 @@ export class MatSelectFilterComponent implements OnInit, OnDestroy {
   @Input('placeholder') placeholder: string;
   @Input('color') color: string;
   @Input('displayMember') displayMember: string;
+  @Input('resolveMember') resolveMember: string;
   @Input('showSpinner') showSpinner = true;
   @Input('noResultsMessage') noResultsMessage = 'No results';
   @Input('hasGroup') hasGroup: boolean;
@@ -51,6 +52,25 @@ export class MatSelectFilterComponent implements OnInit, OnDestroy {
     });
   }
 
+  f(item, v) {
+    let c = v.split('.');
+    let k = c[0];
+    let r = new RegExp('^'+k+'\.')
+    let next = v.replace(r, '');
+    let _c = c.length;
+    let i = 1;
+    let finded = null;
+
+    if(i === _c) {
+      finded = item[k];
+
+    } else {
+      finded = this.f(item[k], next)
+    }
+
+    return finded;
+  }
+
   ngOnInit() {
     this.searchFormValueChangesSubscription =  this.searchForm.valueChanges.subscribe(value => {
       if (this.showSpinner) {
@@ -67,8 +87,14 @@ export class MatSelectFilterComponent implements OnInit, OnDestroy {
             objCopy[this.groupArrayName] = objCopy[this.groupArrayName].filter(g => g[this.displayMember].toLowerCase().includes(value['value'].toLowerCase()));
             return objCopy;
           }).filter(x => x[this.groupArrayName].length > 0);
-        } else {
+        } else if(this.resolveMember === null) {
           this.filteredItems = this.array.filter(name => name[this.displayMember].toLowerCase().includes(value['value'].toLowerCase()));
+        } else {
+          this.filteredItems = this.array.filter((name) => {
+            let _name = this.f(name, this.resolveMember)
+            _name[this.displayMember].toLowerCase().includes(value['value'].toLowerCase())
+          });
+
         }
         // NO RESULTS VALIDATION
 
@@ -91,7 +117,7 @@ export class MatSelectFilterComponent implements OnInit, OnDestroy {
       this.input.nativeElement.focus();
     }, 500);
     if (!this.placeholder) {
-      this.placeholder = 'Search...';
+      this.placeholder = 'Filtrer';
     }
   }
 
